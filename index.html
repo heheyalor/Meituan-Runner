@@ -1,0 +1,1788 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>Meituan Delivery Hotel Runner | 美团外卖谁下楼拿</title>
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Google Fonts: Inter & Noto Sans SC -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800;900&family=Noto+Sans+SC:wght@500;700;900&display=swap" rel="stylesheet">
+  <!-- FontAwesome Icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
+
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['Inter', 'Noto Sans SC', 'sans-serif'],
+          },
+          colors: {
+            meituan: {
+              yellow: '#FFD000',
+              gold: '#FFC300',
+              orange: '#FF6B00',
+              dark: '#191919',
+              charcoal: '#262626',
+              cream: '#FFFBEB',
+            }
+          },
+          boxShadow: {
+            'chunky': '0 6px 0 #191919',
+            'chunky-sm': '0 3px 0 #191919',
+            'chunky-lg': '0 10px 0 #191919',
+            'glow': '0 0 25px rgba(255, 208, 0, 0.55)',
+          }
+        }
+      }
+    }
+  </script>
+
+  <style>
+    * {
+      box-sizing: border-box;
+      -webkit-tap-highlight-color: transparent;
+      user-select: none;
+    }
+
+    body {
+      background-color: #FFFDF5;
+      background-image: 
+        radial-gradient(#FFD000 1.2px, transparent 1.2px), 
+        radial-gradient(#FFE580 1.2px, #FFFDF5 1.2px);
+      background-size: 36px 36px;
+      background-position: 0 0, 18px 18px;
+      color: #191919;
+      overflow-x: hidden;
+    }
+
+    /* Tactile 3D Comic/App Buttons */
+    .btn-chunky {
+      border: 3px solid #191919;
+      box-shadow: 0 5px 0 #191919;
+      transition: transform 0.1s ease, box-shadow 0.1s ease, background-color 0.15s ease;
+    }
+    .btn-chunky:hover:not(:disabled) {
+      transform: translateY(-1px);
+      box-shadow: 0 6px 0 #191919;
+    }
+    .btn-chunky:active:not(:disabled) {
+      transform: translateY(4px);
+      box-shadow: 0 1px 0 #191919;
+    }
+    .btn-chunky:disabled {
+      opacity: 0.55;
+      cursor: not-allowed;
+    }
+
+    .card-chunky {
+      border: 3px solid #191919;
+      box-shadow: 0 6px 0 #191919;
+    }
+
+    .card-chunky-sm {
+      border: 2.5px solid #191919;
+      box-shadow: 0 4px 0 #191919;
+    }
+
+    /* Animations */
+    @keyframes floatSlow {
+      0%, 100% { transform: translateY(0px) rotate(0deg); }
+      50% { transform: translateY(-6px) rotate(2deg); }
+    }
+    .animate-float {
+      animation: floatSlow 3s ease-in-out infinite;
+    }
+
+    @keyframes bagShake {
+      0%, 100% { transform: rotate(0deg) scale(1); }
+      20% { transform: rotate(-7deg) scale(1.05); }
+      40% { transform: rotate(7deg) scale(1.08); }
+      60% { transform: rotate(-5deg) scale(1.05); }
+      80% { transform: rotate(5deg) scale(1.03); }
+    }
+    .bag-shake:hover {
+      animation: bagShake 0.5s ease-in-out;
+    }
+
+    @keyframes popIn {
+      0% { transform: scale(0.7); opacity: 0; }
+      75% { transform: scale(1.05); opacity: 1; }
+      100% { transform: scale(1); opacity: 1; }
+    }
+    .animate-pop {
+      animation: popIn 0.35s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+    }
+
+    @keyframes scooterBounce {
+      0%, 100% { transform: translateY(0px); }
+      50% { transform: translateY(-3px); }
+    }
+    .scooter-running {
+      animation: scooterBounce 0.18s infinite;
+    }
+
+    /* Custom Scrollbar */
+    ::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+    ::-webkit-scrollbar-track {
+      background: #FFF9DB;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #191919;
+      border-radius: 9999px;
+    }
+
+    /* Confetti Canvas Overlay */
+    #confettiCanvas {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      pointer-events: none;
+      z-index: 100;
+    }
+  </style>
+</head>
+<body class="min-h-screen flex flex-col justify-between pb-12">
+
+  <!-- Confetti Canvas -->
+  <canvas id="confettiCanvas"></canvas>
+
+  <!-- TOP HEADER BAR -->
+  <header class="sticky top-0 z-30 bg-meituan-yellow border-b-4 border-meituan-dark px-3 py-2.5 sm:px-6 shadow-md">
+    <div class="max-w-5xl mx-auto flex items-center justify-between gap-2">
+      <!-- Brand Logo & Title -->
+      <div class="flex items-center gap-2.5">
+        <div class="w-11 h-11 rounded-2xl bg-meituan-dark text-meituan-yellow flex items-center justify-center border-2 border-meituan-dark shadow-sm relative">
+          <!-- Cute Kangaroo/Rider Ears Badge -->
+          <span class="text-2xl">🛵</span>
+          <span class="absolute -top-1.5 -right-1.5 bg-meituan-orange text-white text-[10px] font-black px-1.5 py-0.2 rounded-full border border-meituan-dark">外卖</span>
+        </div>
+        <div>
+          <div class="flex items-center gap-1.5">
+            <h1 class="font-black text-base sm:text-xl tracking-tight text-meituan-dark leading-none">
+              MEITUAN HOTEL RUNNER
+            </h1>
+            <span class="hidden sm:inline-block bg-meituan-dark text-meituan-yellow text-[11px] font-extrabold px-2 py-0.5 rounded-full">
+              美团外卖·谁下楼拿
+            </span>
+          </div>
+          <p class="text-xs font-bold text-meituan-charcoal/80 mt-0.5">
+            Room Order Arrived at Lobby! Who's putting on slippers? 🩴
+          </p>
+        </div>
+      </div>
+
+      <!-- Right Controls: Order Status Pill & Sound Toggle -->
+      <div class="flex items-center gap-2">
+        <button id="testHornBtn" title="Honk Delivery Horn" class="btn-chunky bg-white hover:bg-amber-50 text-meituan-dark px-2.5 py-1.5 rounded-xl text-xs font-extrabold flex items-center gap-1.5">
+          <span>🔔</span>
+          <span class="hidden md:inline">Rider Bell</span>
+        </button>
+
+        <button id="soundToggleBtn" aria-label="Toggle Sound" class="btn-chunky bg-meituan-dark text-meituan-yellow px-3 py-1.5 rounded-xl text-xs sm:text-sm font-bold flex items-center gap-1.5">
+          <i id="soundIcon" class="fa-solid fa-volume-high"></i>
+          <span id="soundLabel" class="hidden sm:inline">SFX ON</span>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- MAIN CONTENT CONTAINER -->
+  <main class="max-w-5xl w-full mx-auto px-3 sm:px-6 pt-5 flex-1">
+
+    <!-- HOTEL ORDER TICKER BANNER -->
+    <div class="card-chunky-sm bg-meituan-dark text-white rounded-2xl p-3 mb-5 flex flex-wrap items-center justify-between gap-2">
+      <div class="flex items-center gap-2.5">
+        <span class="inline-flex items-center justify-center w-8 h-8 rounded-xl bg-meituan-yellow text-meituan-dark font-black text-base animate-bounce">
+          🥡
+        </span>
+        <div class="text-xs sm:text-sm">
+          <span class="text-meituan-yellow font-extrabold uppercase tracking-wider">Rider Alert:</span>
+          <span id="liveStatusText" class="font-semibold text-gray-100 ml-1">"Hello! Your Meituan takeout is in the hotel lobby takeaway cabinet!"</span>
+        </div>
+      </div>
+      <div class="flex items-center gap-2 ml-auto">
+        <span class="text-[11px] font-bold bg-white/15 px-2.5 py-1 rounded-lg text-meituan-yellow">
+          <i class="fa-solid fa-users mr-1"></i>Active: <span id="activeCountBadge">4</span> Runners
+        </span>
+      </div>
+    </div>
+
+    <!-- RESPONSIVE 12-COLUMN GRID -->
+    <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+
+      <!-- LEFT / MAIN COLUMN: GAME MODES & STAGE (7 cols on desktop) -->
+      <div class="lg:col-span-7 flex flex-col gap-4">
+
+        <!-- SLEEK GAME MODE TABS -->
+        <div class="grid grid-cols-3 gap-2 sm:gap-3 bg-amber-100/90 p-2 rounded-2xl border-3 border-meituan-dark card-chunky-sm">
+          <button data-mode="wheel" class="mode-tab btn-chunky bg-meituan-yellow text-meituan-dark py-2.5 px-2 rounded-xl font-black text-xs sm:text-sm flex flex-col sm:flex-row items-center justify-center gap-1 sm:gap-2">
+            <span class="text-base sm:text-lg">🎡</span>
+            <span>Spin Wheel</span>
+          </button>
+          <button data-mode="bags" class="mode-tab btn-chunky bg-white text-meituan-dark py-2.5 px-2 rounded-xl font-black text-xs sm:text-sm flex flex-col sm:flex-row items-center justify-center gap-1 sm:gap-2">
+            <span class="text-base sm:text-lg">🛍️</span>
+            <span>Mystery Bags</span>
+          </button>
+          <button data-mode="race" class="mode-tab btn-chunky bg-white text-meituan-dark py-2.5 px-2 rounded-xl font-black text-xs sm:text-sm flex flex-col sm:flex-row items-center justify-center gap-1 sm:gap-2">
+            <span class="text-base sm:text-lg">🛵</span>
+            <span>Scooter Race</span>
+          </button>
+        </div>
+
+        <!-- ==========================================
+             MODE 1: SPIN THE WHEEL
+             ========================================== -->
+        <section id="mode-wheel" class="game-panel card-chunky bg-white rounded-3xl p-4 sm:p-6 flex flex-col items-center relative overflow-hidden">
+          <!-- Top Mode Header -->
+          <div class="w-full flex items-center justify-between mb-2">
+            <div>
+              <span class="text-[11px] font-black uppercase tracking-widest text-meituan-orange bg-orange-100 px-2.5 py-0.5 rounded-full border border-meituan-dark">
+                Mode 01 · Classic Roulette
+              </span>
+              <h2 class="text-lg sm:text-xl font-black text-meituan-dark mt-1">
+                Spin the Waimai Wheel
+              </h2>
+            </div>
+            <button id="shuffleWheelBtn" title="Shuffle slice order" class="btn-chunky bg-amber-100 hover:bg-amber-200 text-meituan-dark px-3 py-1.5 rounded-xl text-xs font-extrabold flex items-center gap-1.5">
+              <i class="fa-solid fa-shuffle"></i>
+              <span>Shuffle</span>
+            </button>
+          </div>
+
+          <!-- Wheel Container -->
+          <div class="relative w-full max-w-[360px] aspect-square my-2 flex items-center justify-center">
+            <!-- Top Pointer / Delivery Pin -->
+            <div id="wheelPointer" class="absolute -top-3 z-20 flex flex-col items-center pointer-events-none" style="transform-origin: 50% 10px;">
+              <div class="bg-meituan-dark text-meituan-yellow text-[10px] font-black px-2 py-0.5 rounded-full border-2 border-white shadow">
+                RUNNER
+              </div>
+              <svg width="38" height="36" viewBox="0 0 38 36" class="-mt-1 drop-shadow-md">
+                <path d="M19 35 L4 6 C3 3 5 0 9 0 L29 0 C33 0 35 3 34 6 Z" fill="#FF4D00" stroke="#191919" stroke-width="3.5" stroke-linejoin="round"/>
+                <circle cx="19" cy="10" r="5" fill="#FFD000" stroke="#191919" stroke-width="2.5"/>
+              </svg>
+            </div>
+
+            <!-- HTML5 Canvas for Wheel -->
+            <canvas id="wheelCanvas" class="w-full h-full cursor-pointer rounded-full"></canvas>
+
+            <!-- Center Hub Cap Button -->
+            <button id="centerSpinBtn" aria-label="Spin the wheel" class="absolute w-20 h-20 rounded-full bg-meituan-yellow border-4 border-meituan-dark shadow-chunky-sm flex flex-col items-center justify-center hover:scale-105 active:scale-95 transition-transform z-10">
+              <span class="text-2xl leading-none">🛵</span>
+              <span class="text-[10px] font-black tracking-tighter text-meituan-dark uppercase mt-0.5">GO!</span>
+            </button>
+          </div>
+
+          <!-- Main Spin Action Button -->
+          <div class="w-full max-w-sm mt-3">
+            <button id="spinWheelBtn" class="btn-chunky w-full bg-meituan-yellow hover:bg-meituan-gold text-meituan-dark py-4 px-6 rounded-2xl font-black text-base sm:text-lg tracking-wide flex items-center justify-center gap-3 shadow-chunky">
+              <i class="fa-solid fa-bolt text-meituan-orange text-xl"></i>
+              <span>SPIN FOR MEITUAN!</span>
+              <span class="bg-meituan-dark text-meituan-yellow text-xs px-2 py-0.5 rounded-lg">美团一下</span>
+            </button>
+          </div>
+          <p class="text-xs font-semibold text-gray-500 mt-2.5 text-center">
+            Tip: Tap the big button or flick the wheel directly!
+          </p>
+        </section>
+
+        <!-- ==========================================
+             MODE 2: MYSTERY TAKEOUT BAGS
+             ========================================== -->
+        <section id="mode-bags" class="game-panel hidden card-chunky bg-white rounded-3xl p-4 sm:p-6 flex flex-col">
+          <!-- Mode Header -->
+          <div class="flex flex-wrap items-center justify-between gap-2 mb-3">
+            <div>
+              <span class="text-[11px] font-black uppercase tracking-widest text-meituan-orange bg-orange-100 px-2.5 py-0.5 rounded-full border border-meituan-dark">
+                Mode 02 · Pass-The-Phone Roulette
+              </span>
+              <h2 class="text-lg sm:text-xl font-black text-meituan-dark mt-1">
+                Mystery Takeout Bags
+              </h2>
+            </div>
+
+            <!-- Bag Count Option -->
+            <div class="flex items-center gap-1.5">
+              <select id="bagCountSelect" aria-label="Select bag count" class="card-chunky-sm bg-amber-50 text-meituan-dark text-xs font-extrabold px-2.5 py-1.5 rounded-xl focus:outline-none cursor-pointer">
+                <option value="match">1 Bag Per Player</option>
+                <option value="6" selected>6 Takeout Bags</option>
+                <option value="8">8 Takeout Bags</option>
+              </select>
+              <button id="resetBagsBtn" class="btn-chunky bg-meituan-yellow text-meituan-dark px-3 py-1.5 rounded-xl text-xs font-black flex items-center gap-1">
+                <i class="fa-solid fa-rotate-right"></i>
+                <span>New Deal</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- Current Turn Banner -->
+          <div id="bagTurnBanner" class="card-chunky-sm bg-amber-100 rounded-2xl p-3 mb-4 flex items-center justify-between">
+            <div class="flex items-center gap-3">
+              <div id="bagCurrentAvatar" class="w-11 h-11 rounded-xl bg-meituan-yellow border-2 border-meituan-dark flex items-center justify-center font-black text-lg shadow-sm">
+                JK
+              </div>
+              <div>
+                <div class="text-[11px] font-extrabold uppercase text-gray-600">Pass phone to tap a bag:</div>
+                <div id="bagCurrentPlayerName" class="text-base sm:text-lg font-black text-meituan-dark">
+                  JK's Turn to Unbox!
+                </div>
+              </div>
+            </div>
+            <div class="text-right">
+              <span class="text-[11px] font-bold text-gray-600 block">Danger Odds</span>
+              <span id="bagDangerOdds" class="text-sm font-black text-meituan-orange">1 in 6</span>
+            </div>
+          </div>
+
+          <!-- Instructions -->
+          <p class="text-xs font-bold text-gray-600 mb-3">
+            Most bags contain safe late-night snacks 🧋🍢🍗. <strong class="text-meituan-orange">ONE bag hides the Hotel Room Keycard & Receipt 🪪🧾</strong> — whoever opens it goes downstairs!
+          </p>
+
+          <!-- Grid of Sealed Takeout Bags -->
+          <div id="bagsGrid" class="grid grid-cols-2 sm:grid-cols-3 gap-3 sm:gap-4 my-1">
+            <!-- Dynamically populated by JS -->
+          </div>
+        </section>
+
+        <!-- ==========================================
+             MODE 3: RIDER SCOOTER RACE
+             ========================================== -->
+        <section id="mode-race" class="game-panel hidden card-chunky bg-white rounded-3xl p-4 sm:p-6 flex flex-col">
+          <!-- Mode Header -->
+          <div class="flex flex-wrap items-center justify-between gap-2 mb-3">
+            <div>
+              <span class="text-[11px] font-black uppercase tracking-widest text-meituan-orange bg-orange-100 px-2.5 py-0.5 rounded-full border border-meituan-dark">
+                Mode 03 · Lobby Sprint Derby
+              </span>
+              <h2 class="text-lg sm:text-xl font-black text-meituan-dark mt-1">
+                Rider Scooter Race
+              </h2>
+            </div>
+
+            <!-- House Rule Selector -->
+            <div class="flex items-center gap-1.5">
+              <select id="raceRuleSelect" aria-label="Race rule" class="card-chunky-sm bg-amber-50 text-meituan-dark text-xs font-extrabold px-2.5 py-1.5 rounded-xl focus:outline-none cursor-pointer">
+                <option value="first" selected>🏆 1st to Cabinet Goes Down</option>
+                <option value="last">🐢 Last Place Goes Down</option>
+              </select>
+            </div>
+          </div>
+
+          <!-- Live Race Commentary Bar -->
+          <div class="bg-meituan-dark text-meituan-yellow rounded-xl px-3.5 py-2.5 mb-4 border-2 border-meituan-dark flex items-center gap-2.5">
+            <i class="fa-solid fa-bullhorn animate-pulse"></i>
+            <span id="raceCommentary" class="text-xs sm:text-sm font-bold truncate">
+              Riders lined up at the hotel elevator! Press START RACE!
+            </span>
+          </div>
+
+          <!-- Race Lanes Container -->
+          <div id="raceTrackContainer" class="flex flex-col gap-2.5 bg-stone-100 p-3 rounded-2xl border-3 border-meituan-dark relative overflow-hidden">
+            <!-- Dynamically populated lanes for JK, JH, XW, XQ... -->
+          </div>
+
+          <!-- Race Action Buttons -->
+          <div class="flex items-center gap-3 mt-4">
+            <button id="startRaceBtn" class="btn-chunky flex-1 bg-meituan-yellow hover:bg-meituan-gold text-meituan-dark py-3.5 px-5 rounded-2xl font-black text-base flex items-center justify-center gap-2">
+              <i class="fa-solid fa-flag-checkered"></i>
+              <span>START LOBBY SPRINT!</span>
+            </button>
+            <button id="resetRaceBtn" title="Reset Track" class="btn-chunky bg-white hover:bg-gray-100 text-meituan-dark py-3.5 px-4 rounded-2xl font-black text-base">
+              <i class="fa-solid fa-rotate-left"></i>
+            </button>
+          </div>
+        </section>
+
+      </div>
+
+      <!-- RIGHT COLUMN: ROSTER MANAGEMENT & TALLIES (5 cols on desktop) -->
+      <div class="lg:col-span-5 flex flex-col gap-5">
+
+        <!-- ROOMMATES & PARTICIPANTS CARD -->
+        <section class="card-chunky bg-white rounded-3xl p-4 sm:p-5">
+          <div class="flex items-center justify-between mb-3">
+            <div class="flex items-center gap-2">
+              <span class="w-8 h-8 rounded-xl bg-meituan-yellow border-2 border-meituan-dark flex items-center justify-center text-base">
+                🏨
+              </span>
+              <div>
+                <h3 class="font-black text-base sm:text-lg text-meituan-dark leading-tight">
+                  Hotel Room Roster
+                </h3>
+                <p class="text-[11px] font-bold text-gray-500">
+                  Toggle who's awake & hungry for this round
+                </p>
+              </div>
+            </div>
+
+            <button id="resetDefaultRosterBtn" title="Restore JK, JH, XW, XQ" class="btn-chunky bg-amber-100 hover:bg-amber-200 text-meituan-dark px-2.5 py-1.5 rounded-xl text-[11px] font-black flex items-center gap-1">
+              <i class="fa-solid fa-users-gear"></i>
+              <span>Reset Default</span>
+            </button>
+          </div>
+
+          <!-- Add New Person Input Form -->
+          <form id="addPlayerForm" class="flex gap-2 mb-3">
+            <input 
+              id="newPlayerInput" 
+              type="text" 
+              maxlength="16"
+              placeholder="Add roommate (e.g. ZY, Alex)..." 
+              class="flex-1 bg-amber-50/70 border-2 border-meituan-dark rounded-xl px-3.5 py-2 text-sm font-bold text-meituan-dark placeholder-gray-400 focus:outline-none focus:bg-white focus:ring-2 focus:ring-meituan-yellow"
+            />
+            <button type="submit" class="btn-chunky bg-meituan-yellow hover:bg-meituan-gold text-meituan-dark px-4 py-2 rounded-xl font-black text-xs sm:text-sm flex items-center gap-1.5 shrink-0">
+              <i class="fa-solid fa-plus"></i>
+              <span>Add</span>
+            </button>
+          </form>
+
+          <!-- Warning if fewer than 2 active players -->
+          <div id="minPlayerWarning" class="hidden bg-red-100 border-2 border-red-600 text-red-800 rounded-xl px-3 py-2 text-xs font-extrabold mb-3 flex items-center gap-2">
+            <i class="fa-solid fa-circle-exclamation"></i>
+            <span>Need at least 2 active players to run the game!</span>
+          </div>
+
+          <!-- Participant List -->
+          <div id="rosterList" class="flex flex-col gap-2 max-h-[290px] overflow-y-auto pr-1">
+            <!-- Populated by JS -->
+          </div>
+
+          <!-- Quick Roster Actions Footer -->
+          <div class="mt-3 pt-3 border-t-2 border-dashed border-gray-200 flex items-center justify-between text-xs font-bold text-gray-500">
+            <button id="enableAllPlayersBtn" class="hover:text-meituan-dark underline">
+              Select All Roommates
+            </button>
+            <span id="rosterSummaryText">4 total · 4 active</span>
+          </div>
+        </section>
+
+        <!-- LOBBY RUN TALLIES SCOREBOARD CARD -->
+        <section class="card-chunky bg-meituan-dark text-white rounded-3xl p-4 sm:p-5">
+          <div class="flex items-center justify-between mb-3">
+            <div class="flex items-center gap-2">
+              <span class="w-8 h-8 rounded-xl bg-meituan-yellow text-meituan-dark font-black flex items-center justify-center text-base">
+                🏆
+              </span>
+              <div>
+                <h3 class="font-black text-base sm:text-lg text-meituan-yellow leading-tight">
+                  Lobby Run Tallies
+                </h3>
+                <p class="text-[11px] font-semibold text-gray-400">
+                  Who has gone downstairs the most tonight?
+                </p>
+              </div>
+            </div>
+
+            <button id="clearTalliesBtn" class="text-[11px] font-extrabold text-gray-300 hover:text-meituan-yellow bg-white/10 px-2.5 py-1 rounded-lg transition">
+              Zero Counts
+            </button>
+          </div>
+
+          <!-- Scoreboard Bars -->
+          <div id="tallyBoard" class="flex flex-col gap-2.5">
+            <!-- Populated by JS -->
+          </div>
+
+          <!-- Recent Runs History Log -->
+          <div class="mt-4 pt-3 border-t border-white/15">
+            <div class="text-[11px] font-extrabold uppercase tracking-wider text-gray-400 mb-1.5 flex items-center justify-between">
+              <span>Recent Delivery Runs</span>
+              <span class="text-meituan-yellow">外卖记录</span>
+            </div>
+            <div id="historyLog" class="text-xs text-gray-300 space-y-1 max-h-24 overflow-y-auto">
+              <div class="text-gray-500 italic">No lobby trips recorded yet tonight.</div>
+            </div>
+          </div>
+        </section>
+
+      </div>
+
+    </div>
+  </main>
+
+  <!-- FOOTER -->
+  <footer class="max-w-5xl w-full mx-auto px-4 mt-8 text-center text-xs font-bold text-gray-500">
+    <p>🛵 Meituan Delivery Hotel Runner · Built for JK, JH, XW, XQ & Friends · Remember your room keycard!</p>
+  </footer>
+
+  <!-- ==========================================
+       WINNER / CHOSEN RUNNER MODAL
+       ========================================== -->
+  <div id="winnerModal" class="fixed inset-0 z-50 hidden items-center justify-center p-4 bg-black/75 backdrop-blur-sm">
+    <div class="card-chunky bg-white w-full max-w-md rounded-3xl overflow-hidden animate-pop relative">
+      
+      <!-- Top Meituan Receipt Header -->
+      <div class="bg-meituan-yellow border-b-4 border-meituan-dark px-5 py-4 flex items-center justify-between">
+        <div class="flex items-center gap-2">
+          <span class="bg-meituan-dark text-meituan-yellow text-xs font-black px-2.5 py-1 rounded-lg">
+            美团外卖
+          </span>
+          <span id="modalModeBadge" class="text-xs font-extrabold text-meituan-dark uppercase tracking-wider">
+            Wheel Decision
+          </span>
+        </div>
+        <button id="closeModalXBtn" aria-label="Close modal" class="w-8 h-8 rounded-xl bg-white border-2 border-meituan-dark font-black text-meituan-dark flex items-center justify-center hover:bg-gray-100">
+          ✕
+        </button>
+      </div>
+
+      <!-- Body Content -->
+      <div class="p-6 text-center flex flex-col items-center">
+        <!-- Animated Scooter + Slippers Badge -->
+        <div class="relative mb-3">
+          <div id="winnerAvatarCircle" class="w-24 h-24 rounded-3xl bg-meituan-yellow border-4 border-meituan-dark shadow-chunky flex flex-col items-center justify-center animate-float">
+            <span id="winnerEmoji" class="text-3xl leading-none">🛵</span>
+            <span id="winnerShortCode" class="text-xl font-black text-meituan-dark mt-0.5">JK</span>
+          </div>
+          <span class="absolute -bottom-2 -right-3 bg-meituan-orange text-white text-[11px] font-black px-2.5 py-0.5 rounded-full border-2 border-meituan-dark shadow">
+            RUNNER!
+          </span>
+        </div>
+
+        <p class="text-xs font-black uppercase tracking-widest text-meituan-orange mt-2">
+          CHOSEN LOBBY RUNNER
+        </p>
+
+        <h2 id="winnerHeadline" class="text-2xl sm:text-3xl font-black text-meituan-dark mt-1 leading-tight">
+          JK is going downstairs!
+        </h2>
+
+        <!-- Receipt / Hotel Tip Box -->
+        <div class="w-full bg-amber-50 border-2 border-dashed border-meituan-dark rounded-2xl p-3.5 mt-4 text-left relative">
+          <div class="flex items-center justify-between mb-1">
+            <span class="text-[10px] font-black uppercase tracking-wider text-gray-500">
+              📋 Hotel Lobby Mission Tip
+            </span>
+            <button id="newTipBtn" class="text-[11px] font-extrabold text-meituan-orange hover:underline flex items-center gap-1">
+              <i class="fa-solid fa-dice"></i> New Tip
+            </button>
+          </div>
+          <p id="winnerHotelTip" class="text-xs sm:text-sm font-bold text-meituan-dark leading-snug">
+            "Don't forget the room keycard for the elevator — otherwise you're stuck on Floor 1 with the takeout!"
+          </p>
+        </div>
+
+        <!-- Action Buttons -->
+        <div class="w-full grid grid-cols-1 sm:grid-cols-2 gap-3 mt-5">
+          <button id="spinAgainModalBtn" class="btn-chunky bg-white hover:bg-gray-100 text-meituan-dark py-3 px-4 rounded-2xl font-black text-sm flex items-center justify-center gap-2">
+            <i class="fa-solid fa-rotate-right"></i>
+            <span>Play Again</span>
+          </button>
+          <button id="confirmTallyModalBtn" class="btn-chunky bg-meituan-yellow hover:bg-meituan-gold text-meituan-dark py-3 px-4 rounded-2xl font-black text-sm flex items-center justify-center gap-2">
+            <i class="fa-solid fa-check-double"></i>
+            <span>Confirm & +1 Tally</span>
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ==========================================
+       APPLICATION JAVASCRIPT
+       ========================================== -->
+  <script>
+    /**************************************************************
+     * 1. STATE & DEFAULT CONFIGURATION
+     **************************************************************/
+    const STORAGE_KEY = 'meituan_hotel_runner_state_v1';
+
+    const SLICE_PALETTE = [
+      { bg: '#FFD000', text: '#191919', emoji: '🛵' }, // Meituan Yellow
+      { bg: '#FF6B00', text: '#FFFFFF', emoji: '🥡' }, // Waimai Orange
+      { bg: '#2EC4B6', text: '#191919', emoji: '🧋' }, // Mint Boba
+      { bg: '#FF3366', text: '#FFFFFF', emoji: '🍢' }, // Skewer Rose
+      { bg: '#8338EC', text: '#FFFFFF', emoji: '🍜' }, // Noodle Purple
+      { bg: '#3A86FF', text: '#FFFFFF', emoji: '🍗' }, // Crispy Blue
+      { bg: '#06D6A0', text: '#191919', emoji: '🥟' }, // Dumpling Green
+      { bg: '#FB5607', text: '#FFFFFF', emoji: '🦞' }  // Crayfish Flame
+    ];
+
+    const DEFAULT_PARTICIPANTS = [
+      { id: 'p_jk', name: 'JK', active: true, tally: 0, colorIdx: 0, emoji: '🛵' },
+      { id: 'p_jh', name: 'JH', active: true, tally: 0, colorIdx: 1, emoji: '🧋' },
+      { id: 'p_xw', name: 'XW', active: true, tally: 0, colorIdx: 2, emoji: '🍢' },
+      { id: 'p_xq', name: 'XQ', active: true, tally: 0, colorIdx: 3, emoji: '🍗' }
+    ];
+
+    const HOTEL_TIPS = [
+      "Don't forget the room keycard for the elevator — otherwise you'll be stranded in the lobby hugging the takeout!",
+      "Hotel slippers on, pajamas acceptable, dignity completely optional.",
+      "Check Meituan Takeout Locker (外卖柜) in the lobby before wandering outside!",
+      "Verify the last 4 digits of the phone tail number (手机尾号) before grabbing the bag!",
+      "No sneaking a piece of crispy fried chicken inside the elevator on the way back up!",
+      "Make sure you grab all the bags — sometimes drinks and food are packed separately!",
+      "If the lobby robot is delivering it, don't race the robot in the hallway.",
+      "Check if the rider left extra napkins, straws, and disposable gloves!"
+    ];
+
+    const SAFE_TAKEOUT_ITEMS = [
+      { name: 'Brown Sugar Boba', cn: '黑糖珍珠奶茶', emoji: '🧋', note: 'Safe! Sip your milk tea in bed.' },
+      { name: 'Crispy Fried Chicken', cn: '黄金炸鸡腿', emoji: '🍗', note: 'Safe! Stay cozy under the hotel duvet.' },
+      { name: 'Sizzling BBQ Skewers', cn: '深夜烤串', emoji: '🍢', note: 'Safe! You escaped lobby duty.' },
+      { name: 'Spicy Mala Tang', cn: '招牌麻辣烫', emoji: '🍜', note: 'Safe! Keep your slippers off.' },
+      { name: 'Juicy Soup Dumplings', cn: '鲜肉小笼包', emoji: '🥟', note: 'Safe! Not going downstairs this time.' },
+      { name: 'Garlic Crayfish Bowl', cn: '蒜蓉小龙虾', emoji: '🦞', note: 'Safe! Put on your plastic gloves and relax.' },
+      { name: 'Mango Pomelo Sago', cn: '杨枝甘露', emoji: '🥭', note: 'Safe! Sweet relief for you.' },
+      { name: 'Roasted Peking Duck', cn: '脆皮烤鸭卷', emoji: '🦆', note: 'Safe! Someone else is taking the elevator.' }
+    ];
+
+    let appState = {
+      players: [],
+      soundEnabled: true,
+      currentMode: 'wheel', // 'wheel' | 'bags' | 'race'
+      history: [],
+      currentWinner: null,
+      currentWinSource: 'Spin the Wheel',
+      tallyConfirmedForWinner: false
+    };
+
+    /**************************************************************
+     * 2. WEB AUDIO API SOUND SYNTHESIZER (No external URLs needed)
+     **************************************************************/
+    class SoundEngine {
+      constructor() {
+        this.ctx = null;
+      }
+
+      init() {
+        if (!this.ctx) {
+          const AudioCtx = window.AudioContext || window.webkitAudioContext;
+          if (AudioCtx) {
+            this.ctx = new AudioCtx();
+          }
+        }
+        if (this.ctx && this.ctx.state === 'suspended') {
+          this.ctx.resume();
+        }
+      }
+
+      // Crisp wooden/plastic peg tick when wheel slices pass the pointer
+      playTick(pitchMultiplier = 1) {
+        if (!appState.soundEnabled) return;
+        this.init();
+        if (!this.ctx) return;
+
+        const now = this.ctx.currentTime;
+        const osc = this.ctx.createOscillator();
+        const gain = this.ctx.createGain();
+
+        osc.type = 'triangle';
+        osc.frequency.setValueAtTime(520 * pitchMultiplier, now);
+        osc.frequency.exponentialRampToValueAtTime(140, now + 0.045);
+
+        gain.gain.setValueAtTime(0.22, now);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + 0.045);
+
+        osc.connect(gain);
+        gain.connect(this.ctx.destination);
+
+        osc.start(now);
+        osc.stop(now + 0.05);
+      }
+
+      // Safe takeout bag pop chime
+      playSafePop() {
+        if (!appState.soundEnabled) return;
+        this.init();
+        if (!this.ctx) return;
+
+        const now = this.ctx.currentTime;
+        const notes = [523.25, 659.25, 783.99]; // C5, E5, G5
+        notes.forEach((freq, idx) => {
+          const osc = this.ctx.createOscillator();
+          const gain = this.ctx.createGain();
+          osc.type = 'sine';
+          osc.frequency.setValueAtTime(freq, now + idx * 0.06);
+          gain.gain.setValueAtTime(0.18, now + idx * 0.06);
+          gain.gain.exponentialRampToValueAtTime(0.001, now + idx * 0.06 + 0.18);
+          osc.connect(gain);
+          gain.connect(this.ctx.destination);
+          osc.start(now + idx * 0.06);
+          osc.stop(now + idx * 0.06 + 0.2);
+        });
+      }
+
+      // Meituan scooter horn + doorbell fanfare when runner is chosen!
+      playDeliveryFanfare() {
+        if (!appState.soundEnabled) return;
+        this.init();
+        if (!this.ctx) return;
+
+        const now = this.ctx.currentTime;
+
+        // Double Scooter Beep-Beep ("Bi-Bi!")
+        [0, 0.16].forEach(offset => {
+          const osc = this.ctx.createOscillator();
+          const gain = this.ctx.createGain();
+          osc.type = 'sawtooth';
+          osc.frequency.setValueAtTime(440, now + offset);
+          osc.frequency.setValueAtTime(466.16, now + offset + 0.03);
+          gain.gain.setValueAtTime(0.18, now + offset);
+          gain.gain.exponentialRampToValueAtTime(0.001, now + offset + 0.12);
+          osc.connect(gain);
+          gain.connect(this.ctx.destination);
+          osc.start(now + offset);
+          osc.stop(now + offset + 0.13);
+        });
+
+        // Celebratory Arpeggio Chime ("Ding-Dong-Ding!")
+        const fanfare = [
+          { f: 587.33, t: 0.36, d: 0.14 }, // D5
+          { f: 783.99, t: 0.50, d: 0.14 }, // G5
+          { f: 987.77, t: 0.64, d: 0.14 }, // B5
+          { f: 1174.66, t: 0.78, d: 0.42 } // D6
+        ];
+
+        fanfare.forEach(n => {
+          const osc = this.ctx.createOscillator();
+          const gain = this.ctx.createGain();
+          osc.type = 'triangle';
+          osc.frequency.setValueAtTime(n.f, now + n.t);
+          gain.gain.setValueAtTime(0.25, now + n.t);
+          gain.gain.exponentialRampToValueAtTime(0.001, now + n.t + n.d);
+          osc.connect(gain);
+          gain.connect(this.ctx.destination);
+          osc.start(now + n.t);
+          osc.stop(now + n.t + n.d + 0.02);
+        });
+      }
+
+      // Race engine blip
+      playEngineBlip(step = 0) {
+        if (!appState.soundEnabled) return;
+        this.init();
+        if (!this.ctx) return;
+
+        const now = this.ctx.currentTime;
+        const osc = this.ctx.createOscillator();
+        const gain = this.ctx.createGain();
+        osc.type = 'sawtooth';
+        osc.frequency.setValueAtTime(130 + (step % 5) * 25, now);
+        gain.gain.setValueAtTime(0.06, now);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + 0.06);
+        osc.connect(gain);
+        gain.connect(this.ctx.destination);
+        osc.start(now);
+        osc.stop(now + 0.065);
+      }
+    }
+
+    const sfx = new SoundEngine();
+
+    /**************************************************************
+     * 3. STORAGE & ROSTER HELPERS
+     **************************************************************/
+    function loadState() {
+      try {
+        const raw = localStorage.getItem(STORAGE_KEY);
+        if (raw) {
+          const parsed = JSON.parse(raw);
+          if (Array.isArray(parsed.players) && parsed.players.length > 0) {
+            appState.players = parsed.players;
+          } else {
+            appState.players = JSON.parse(JSON.stringify(DEFAULT_PARTICIPANTS));
+          }
+          if (typeof parsed.soundEnabled === 'boolean') {
+            appState.soundEnabled = parsed.soundEnabled;
+          }
+          if (Array.isArray(parsed.history)) {
+            appState.history = parsed.history;
+          }
+          return;
+        }
+      } catch (e) {
+        // Fallback if storage is restricted
+      }
+      appState.players = JSON.parse(JSON.stringify(DEFAULT_PARTICIPANTS));
+    }
+
+    function saveState() {
+      try {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify({
+          players: appState.players,
+          soundEnabled: appState.soundEnabled,
+          history: appState.history.slice(0, 15)
+        }));
+      } catch (e) {
+        // Ignore storage errors in restricted iframes
+      }
+    }
+
+    function getActivePlayers() {
+      return appState.players.filter(p => p.active);
+    }
+
+    function getPaletteForPlayer(player, idx = 0) {
+      const cIdx = typeof player.colorIdx === 'number' ? player.colorIdx : idx;
+      return SLICE_PALETTE[cIdx % SLICE_PALETTE.length];
+    }
+
+    /**************************************************************
+     * 4. ROSTER & TALLY UI RENDERING
+     **************************************************************/
+    function renderAllUI() {
+      renderRosterList();
+      renderTallyBoard();
+      renderHistoryLog();
+      updateSoundButtonUI();
+      drawWheel();
+      if (appState.currentMode === 'bags') {
+        initMysteryBagsGame();
+      } else if (appState.currentMode === 'race') {
+        renderRaceLanes();
+      }
+    }
+
+    function renderRosterList() {
+      const listEl = document.getElementById('rosterList');
+      const activePlayers = getActivePlayers();
+      const warningEl = document.getElementById('minPlayerWarning');
+
+      document.getElementById('activeCountBadge').textContent = activePlayers.length;
+      document.getElementById('rosterSummaryText').textContent =
+        `${appState.players.length} total · ${activePlayers.length} active`;
+
+      if (activePlayers.length < 2) {
+        warningEl.classList.remove('hidden');
+      } else {
+        warningEl.classList.add('hidden');
+      }
+
+      listEl.innerHTML = '';
+
+      appState.players.forEach((player, idx) => {
+        const pal = getPaletteForPlayer(player, idx);
+        const row = document.createElement('div');
+        row.className = `flex items-center justify-between p-2.5 rounded-2xl border-2 border-meituan-dark transition ${
+          player.active ? 'bg-amber-50/70' : 'bg-gray-100 opacity-60'
+        }`;
+
+        row.innerHTML = `
+          <div class="flex items-center gap-2.5 min-w-0">
+            <button data-action="toggle" data-id="${player.id}" title="Toggle active status"
+              class="w-9 h-9 rounded-xl border-2 border-meituan-dark flex items-center justify-center font-black text-sm shrink-0 transition transform active:scale-90"
+              style="background-color: ${player.active ? pal.bg : '#E5E7EB'}; color: ${player.active ? pal.text : '#6B7280'}">
+              ${player.emoji || pal.emoji}
+            </button>
+            <div class="truncate">
+              <div class="font-black text-sm text-meituan-dark truncate flex items-center gap-1.5">
+                <span>${escapeHtml(player.name)}</span>
+                ${
+                  player.active
+                    ? '<span class="text-[10px] font-extrabold bg-green-200 text-green-900 px-1.5 py-0.2 rounded-md border border-green-800">IN</span>'
+                    : '<span class="text-[10px] font-bold bg-gray-300 text-gray-700 px-1.5 py-0.2 rounded-md">OUT</span>'
+                }
+              </div>
+              <div class="text-[11px] font-semibold text-gray-500">
+                Lobby runs: <strong class="text-meituan-dark">${player.tally}</strong>
+              </div>
+            </div>
+          </div>
+
+          <div class="flex items-center gap-1.5 shrink-0">
+            <button data-action="toggle" data-id="${player.id}"
+              class="px-2.5 py-1 rounded-lg border-2 border-meituan-dark text-xs font-extrabold ${
+                player.active ? 'bg-white text-meituan-dark hover:bg-gray-100' : 'bg-meituan-yellow text-meituan-dark'
+              }">
+              ${player.active ? 'Skip' : 'Join'}
+            </button>
+            <button data-action="remove" data-id="${player.id}" title="Remove player"
+              class="w-7 h-7 rounded-lg border-2 border-meituan-dark bg-white hover:bg-red-100 text-red-600 flex items-center justify-center text-xs font-black">
+              <i class="fa-solid fa-trash-can"></i>
+            </button>
+          </div>
+        `;
+        listEl.appendChild(row);
+      });
+    }
+
+    function renderTallyBoard() {
+      const boardEl = document.getElementById('tallyBoard');
+      boardEl.innerHTML = '';
+
+      const maxTally = Math.max(1, ...appState.players.map(p => p.tally));
+
+      appState.players.forEach((player, idx) => {
+        const pal = getPaletteForPlayer(player, idx);
+        const pct = Math.round((player.tally / maxTally) * 100);
+
+        const item = document.createElement('div');
+        item.className = 'bg-white/10 rounded-xl p-2.5 border border-white/10';
+        item.innerHTML = `
+          <div class="flex items-center justify-between text-xs font-extrabold mb-1.5">
+            <div class="flex items-center gap-2">
+              <span class="inline-flex items-center justify-center w-6 h-6 rounded-lg text-xs border border-black"
+                style="background:${pal.bg}; color:${pal.text}">
+                ${player.emoji || pal.emoji}
+              </span>
+              <span class="text-white text-sm font-black">${escapeHtml(player.name)}</span>
+            </div>
+            <div class="flex items-center gap-1.5">
+              <button data-tally="dec" data-id="${player.id}" class="w-6 h-6 rounded bg-white/10 hover:bg-white/20 text-xs font-black flex items-center justify-center">-</button>
+              <span class="bg-meituan-yellow text-meituan-dark font-black px-2 py-0.5 rounded-md min-w-[28px] text-center">
+                ${player.tally}
+              </span>
+              <button data-tally="inc" data-id="${player.id}" class="w-6 h-6 rounded bg-white/10 hover:bg-white/20 text-xs font-black flex items-center justify-center">+</button>
+            </div>
+          </div>
+          <div class="w-full h-2 bg-black/40 rounded-full overflow-hidden">
+            <div class="h-full rounded-full transition-all duration-300" style="width: ${player.tally > 0 ? Math.max(10, pct) : 0}%; background-color: ${pal.bg}"></div>
+          </div>
+        `;
+        boardEl.appendChild(item);
+      });
+    }
+
+    function renderHistoryLog() {
+      const logEl = document.getElementById('historyLog');
+      if (!appState.history.length) {
+        logEl.innerHTML = `<div class="text-gray-500 italic">No lobby trips recorded yet tonight.</div>`;
+        return;
+      }
+      logEl.innerHTML = appState.history
+        .slice(0, 6)
+        .map(item => `
+          <div class="flex items-center justify-between bg-white/5 px-2.5 py-1 rounded-lg">
+            <span>🛵 <strong class="text-meituan-yellow">${escapeHtml(item.name)}</strong> went downstairs (${escapeHtml(item.mode)})</span>
+            <span class="text-[10px] text-gray-400">${escapeHtml(item.time)}</span>
+          </div>
+        `)
+        .join('');
+    }
+
+    function escapeHtml(str) {
+      return String(str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;');
+    }
+
+    /**************************************************************
+     * 5. MODE 1: SPIN THE WHEEL (HTML5 CANVAS + PHYSICS)
+     **************************************************************/
+    const wheelCanvas = document.getElementById('wheelCanvas');
+    const wheelCtx = wheelCanvas.getContext('2d');
+    const wheelPointer = document.getElementById('wheelPointer');
+
+    let wheelState = {
+      angle: 0,          // Current rotation in radians
+      angularVelocity: 0,
+      isSpinning: false,
+      lastSliceIndex: -1,
+      pointerBounce: 0
+    };
+
+    function resizeWheelCanvas() {
+      const container = wheelCanvas.parentElement;
+      const size = Math.min(container.clientWidth, 360);
+      const dpr = window.devicePixelRatio || 1;
+      wheelCanvas.width = size * dpr;
+      wheelCanvas.height = size * dpr;
+      wheelCtx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      drawWheel();
+    }
+
+    function drawWheel() {
+      const size = wheelCanvas.width / (window.devicePixelRatio || 1);
+      if (!size) return;
+
+      const cx = size / 2;
+      const cy = size / 2;
+      const radius = size / 2 - 10;
+
+      wheelCtx.clearRect(0, 0, size, size);
+
+      const active = getActivePlayers();
+
+      // If fewer than 2 players, draw placeholder wheel
+      if (active.length < 2) {
+        wheelCtx.save();
+        wheelCtx.beginPath();
+        wheelCtx.arc(cx, cy, radius, 0, Math.PI * 2);
+        wheelCtx.fillStyle = '#FFF3B0';
+        wheelCtx.fill();
+        wheelCtx.lineWidth = 6;
+        wheelCtx.strokeStyle = '#191919';
+        wheelCtx.stroke();
+
+        wheelCtx.fillStyle = '#191919';
+        wheelCtx.font = '900 15px Inter, sans-serif';
+        wheelCtx.textAlign = 'center';
+        wheelCtx.fillText('Enable at least 2 players', cx, cy - 10);
+        wheelCtx.fillText('in the Roster to Spin!', cx, cy + 14);
+        wheelCtx.restore();
+        return;
+      }
+
+      const sliceAngle = (Math.PI * 2) / active.length;
+
+      // Outer Dark Rim
+      wheelCtx.save();
+      wheelCtx.beginPath();
+      wheelCtx.arc(cx, cy, radius + 5, 0, Math.PI * 2);
+      wheelCtx.fillStyle = '#191919';
+      wheelCtx.fill();
+      wheelCtx.restore();
+
+      // Draw each participant slice
+      active.forEach((player, i) => {
+        const startAngle = wheelState.angle + i * sliceAngle;
+        const endAngle = startAngle + sliceAngle;
+        const pal = getPaletteForPlayer(player, i);
+
+        wheelCtx.save();
+        wheelCtx.beginPath();
+        wheelCtx.moveTo(cx, cy);
+        wheelCtx.arc(cx, cy, radius, startAngle, endAngle);
+        wheelCtx.closePath();
+        wheelCtx.fillStyle = pal.bg;
+        wheelCtx.fill();
+        wheelCtx.lineWidth = 3.5;
+        wheelCtx.strokeStyle = '#191919';
+        wheelCtx.stroke();
+
+        // Draw Player Name & Emoji along slice bisector
+        const midAngle = startAngle + sliceAngle / 2;
+        wheelCtx.translate(cx, cy);
+        wheelCtx.rotate(midAngle);
+
+        wheelCtx.textAlign = 'right';
+        wheelCtx.fillStyle = pal.text;
+        const fontSize = active.length > 6 ? 15 : 19;
+        wheelCtx.font = `900 ${fontSize}px Inter, "Noto Sans SC", sans-serif`;
+        wheelCtx.fillText(`${player.name} ${player.emoji || pal.emoji}`, radius - 22, 6);
+
+        // Draw Rim Peg Pin at slice boundary
+        wheelCtx.restore();
+
+        const pegX = cx + Math.cos(startAngle) * (radius - 6);
+        const pegY = cy + Math.sin(startAngle) * (radius - 6);
+        wheelCtx.save();
+        wheelCtx.beginPath();
+        wheelCtx.arc(pegX, pegY, 4.5, 0, Math.PI * 2);
+        wheelCtx.fillStyle = '#FFFFFF';
+        wheelCtx.fill();
+        wheelCtx.lineWidth = 2.5;
+        wheelCtx.strokeStyle = '#191919';
+        wheelCtx.stroke();
+        wheelCtx.restore();
+      });
+    }
+
+    // Calculate which slice index is currently under the top pointer (-PI / 2)
+    function getWinningIndexFromAngle(angle, count) {
+      const sliceAngle = (Math.PI * 2) / count;
+      // Top pointer is at 270 deg (3 * PI / 2)
+      const pointerAngle = (Math.PI * 1.5 - (angle % (Math.PI * 2)) + Math.PI * 4) % (Math.PI * 2);
+      return Math.floor(pointerAngle / sliceAngle) % count;
+    }
+
+    function triggerSpinWheel() {
+      if (wheelState.isSpinning) return;
+      const active = getActivePlayers();
+      if (active.length < 2) return;
+
+      wheelState.isSpinning = true;
+      document.getElementById('spinWheelBtn').disabled = true;
+      document.getElementById('liveStatusText').textContent =
+        '"Wheel is spinning... Who is putting on hotel slippers?"';
+
+      // Give an energetic random initial velocity
+      wheelState.angularVelocity = 0.36 + Math.random() * 0.22;
+      wheelState.lastSliceIndex = getWinningIndexFromAngle(wheelState.angle, active.length);
+
+      requestAnimationFrame(stepWheelPhysics);
+    }
+
+    function stepWheelPhysics() {
+      const active = getActivePlayers();
+      if (active.length < 2) {
+        wheelState.isSpinning = false;
+        document.getElementById('spinWheelBtn').disabled = false;
+        return;
+      }
+
+      wheelState.angle += wheelState.angularVelocity;
+      // Smooth friction decay
+      wheelState.angularVelocity *= 0.986;
+
+      // Detect slice boundary crossing for pointer tick & bounce
+      const currentIdx = getWinningIndexFromAngle(wheelState.angle, active.length);
+      if (currentIdx !== wheelState.lastSliceIndex) {
+        wheelState.lastSliceIndex = currentIdx;
+        const speedRatio = Math.min(1.4, Math.max(0.8, wheelState.angularVelocity * 4));
+        sfx.playTick(speedRatio);
+
+        // Visual pointer kick
+        wheelPointer.style.transform = 'rotate(-24deg)';
+        setTimeout(() => {
+          wheelPointer.style.transform = 'rotate(0deg)';
+        }, 65);
+      }
+
+      drawWheel();
+
+      if (wheelState.angularVelocity > 0.0022) {
+        requestAnimationFrame(stepWheelPhysics);
+      } else {
+        // Finished spinning!
+        wheelState.angularVelocity = 0;
+        wheelState.isSpinning = false;
+        document.getElementById('spinWheelBtn').disabled = false;
+
+        const winnerIdx = getWinningIndexFromAngle(wheelState.angle, active.length);
+        const chosenPlayer = active[winnerIdx];
+        if (chosenPlayer) {
+          announceChosenRunner(chosenPlayer, 'Spin the Wheel');
+        }
+      }
+    }
+
+    /**************************************************************
+     * 6. MODE 2: MYSTERY TAKEOUT BAGS (PASS-THE-PHONE ROULETTE)
+     **************************************************************/
+    let bagsGameState = {
+      bags: [],
+      turnIndex: 0,
+      gameOver: false
+    };
+
+    function initMysteryBagsGame() {
+      const active = getActivePlayers();
+      const gridEl = document.getElementById('bagsGrid');
+      const selectVal = document.getElementById('bagCountSelect').value;
+
+      if (active.length < 2) {
+        gridEl.innerHTML = `
+          <div class="col-span-full text-center py-8 text-sm font-bold text-gray-500">
+            Enable at least 2 active players in the Hotel Roster to unbox Mystery Takeout Bags!
+          </div>
+        `;
+        return;
+      }
+
+      let totalBags = active.length;
+      if (selectVal === '6') totalBags = Math.max(active.length, 6);
+      if (selectVal === '8') totalBags = Math.max(active.length, 8);
+
+      // Pick 1 random bag to hold the Hotel Lobby Keycard & Delivery Receipt
+      const bombIndex = Math.floor(Math.random() * totalBags);
+      const shuffledSnacks = [...SAFE_TAKEOUT_ITEMS].sort(() => Math.random() - 0.5);
+
+      bagsGameState.bags = Array.from({ length: totalBags }, (_, i) => ({
+        index: i,
+        opened: false,
+        openedBy: null,
+        isLobbyDuty: i === bombIndex,
+        snack: shuffledSnacks[i % shuffledSnacks.length]
+      }));
+
+      bagsGameState.turnIndex = 0;
+      bagsGameState.gameOver = false;
+
+      updateBagsTurnBanner();
+      renderBagsGrid();
+    }
+
+    function updateBagsTurnBanner() {
+      const active = getActivePlayers();
+      if (!active.length) return;
+
+      const currentPlayer = active[bagsGameState.turnIndex % active.length];
+      const pal = getPaletteForPlayer(currentPlayer, bagsGameState.turnIndex);
+      const remainingClosed = bagsGameState.bags.filter(b => !b.opened).length;
+
+      const avatarEl = document.getElementById('bagCurrentAvatar');
+      avatarEl.textContent = currentPlayer.name.slice(0, 3);
+      avatarEl.style.backgroundColor = pal.bg;
+      avatarEl.style.color = pal.text;
+
+      document.getElementById('bagCurrentPlayerName').textContent =
+        `${currentPlayer.name}'s Turn — Tap a Sealed Bag!`;
+      document.getElementById('bagDangerOdds').textContent =
+        bagsGameState.gameOver ? 'FOUND!' : `1 in ${Math.max(1, remainingClosed)}`;
+    }
+
+    function renderBagsGrid() {
+      const gridEl = document.getElementById('bagsGrid');
+      gridEl.innerHTML = '';
+
+      bagsGameState.bags.forEach(bag => {
+        const card = document.createElement('button');
+        card.type = 'button';
+        card.disabled = bag.opened || bagsGameState.gameOver;
+
+        if (!bag.opened) {
+          // Sealed Meituan Yellow Takeout Bag
+          card.className =
+            'bag-shake card-chunky-sm bg-meituan-yellow hover:bg-meituan-gold text-meituan-dark rounded-2xl p-4 flex flex-col items-center justify-center min-h-[135px] transition relative group cursor-pointer';
+          card.innerHTML = `
+            <span class="absolute top-2 left-2.5 bg-meituan-dark text-meituan-yellow text-[10px] font-black px-2 py-0.5 rounded-md">
+              BAG #0${bag.index + 1}
+            </span>
+            <div class="text-4xl my-1 transform group-hover:scale-110 transition">🛍️</div>
+            <span class="text-xs font-black uppercase tracking-wide mt-1">美团外卖袋</span>
+            <span class="text-[11px] font-bold text-meituan-charcoal/80">Tap to Unseal</span>
+          `;
+          card.addEventListener('click', () => handleOpenBag(bag.index));
+        } else if (bag.isLobbyDuty) {
+          // Opened: THE LOBBY KEYCARD & RECEIPT!
+          card.className =
+            'card-chunky-sm bg-meituan-orange text-white rounded-2xl p-4 flex flex-col items-center justify-center min-h-[135px] animate-pop';
+          card.innerHTML = `
+            <span class="bg-meituan-dark text-meituan-yellow text-[10px] font-black px-2 py-0.5 rounded-md mb-1">
+              ${escapeHtml(bag.openedBy.name)} OPENED
+            </span>
+            <div class="text-3xl my-0.5">🪪🧾</div>
+            <span class="text-xs font-black uppercase tracking-wide mt-1">LOBBY KEYCARD!</span>
+            <span class="text-[11px] font-bold text-amber-100">Going Downstairs!</span>
+          `;
+        } else {
+          // Opened: Safe Snack!
+          card.className =
+            'card-chunky-sm bg-emerald-50 text-meituan-dark rounded-2xl p-4 flex flex-col items-center justify-center min-h-[135px] animate-pop';
+          card.innerHTML = `
+            <span class="bg-emerald-700 text-white text-[10px] font-black px-2 py-0.5 rounded-md mb-1">
+              ${escapeHtml(bag.openedBy.name)} · SAFE
+            </span>
+            <div class="text-3xl my-0.5">${bag.snack.emoji}</div>
+            <span class="text-xs font-black text-center leading-tight mt-1">${escapeHtml(bag.snack.name)}</span>
+            <span class="text-[10px] font-bold text-emerald-700">${escapeHtml(bag.snack.cn)}</span>
+          `;
+        }
+
+        gridEl.appendChild(card);
+      });
+    }
+
+    function handleOpenBag(bagIndex) {
+      if (bagsGameState.gameOver) return;
+      const active = getActivePlayers();
+      if (active.length < 2) return;
+
+      const bag = bagsGameState.bags[bagIndex];
+      if (!bag || bag.opened) return;
+
+      const currentPlayer = active[bagsGameState.turnIndex % active.length];
+      bag.opened = true;
+      bag.openedBy = currentPlayer;
+
+      if (bag.isLobbyDuty) {
+        bagsGameState.gameOver = true;
+        renderBagsGrid();
+        updateBagsTurnBanner();
+        setTimeout(() => {
+          announceChosenRunner(currentPlayer, 'Mystery Takeout Bags');
+        }, 420);
+      } else {
+        sfx.playSafePop();
+        bagsGameState.turnIndex = (bagsGameState.turnIndex + 1) % active.length;
+        renderBagsGrid();
+        updateBagsTurnBanner();
+      }
+    }
+
+    /**************************************************************
+     * 7. MODE 3: RIDER SCOOTER RACE (LOBBY SPRINT)
+     **************************************************************/
+    let raceState = {
+      isRunning: false,
+      positions: {},
+      intervalId: null,
+      stepCount: 0
+    };
+
+    const RACE_COMMENTARIES = [
+      "{name} hits the turbo button on the yellow scooter!",
+      "{name} is hunting for the second hotel slipper!",
+      "{name} catches the express elevator down to Floor 1!",
+      "{name} smells the BBQ skewers and speeds up!",
+      "{name} dodges the room service housekeeping cart!",
+      "{name} is sprinting toward Takeout Locker #B4!"
+    ];
+
+    function renderRaceLanes() {
+      const container = document.getElementById('raceTrackContainer');
+      const active = getActivePlayers();
+
+      if (active.length < 2) {
+        container.innerHTML = `
+          <div class="text-center py-6 text-sm font-bold text-gray-500">
+            Enable at least 2 active players in the Hotel Roster to start the Scooter Race!
+          </div>
+        `;
+        return;
+      }
+
+      container.innerHTML = '';
+
+      active.forEach((player, idx) => {
+        const pal = getPaletteForPlayer(player, idx);
+        const pos = raceState.positions[player.id] || 0;
+
+        const lane = document.createElement('div');
+        lane.className =
+          'relative bg-white rounded-xl border-2 border-meituan-dark h-14 flex items-center px-3 overflow-hidden';
+
+        lane.innerHTML = `
+          <!-- Dashed Road Line -->
+          <div class="absolute inset-x-12 top-1/2 border-b-2 border-dashed border-gray-300 pointer-events-none"></div>
+
+          <!-- Finish Line Cabinet Icon on Right -->
+          <div class="absolute right-2 top-1/2 -translate-y-1/2 w-8 h-10 rounded-lg bg-amber-100 border-2 border-meituan-dark flex flex-col items-center justify-center text-[10px] font-black z-10" title="Hotel Takeout Cabinet">
+            <span>🗄️</span>
+            <span class="text-[8px] leading-none">柜</span>
+          </div>
+
+          <!-- Player Lane Tag on Left -->
+          <div class="z-10 flex items-center gap-1.5 bg-meituan-dark text-white text-xs font-black px-2 py-1 rounded-lg">
+            <span>${escapeHtml(player.name)}</span>
+          </div>
+
+          <!-- Moving Scooter Rider -->
+          <div id="scooter_${player.id}" 
+            class="absolute top-1/2 -translate-y-1/2 z-20 flex items-center gap-1 transition-all duration-100"
+            style="left: calc(52px + ${Math.min(88, pos)} * (100% - 118px) / 100);">
+            <div class="px-2 py-0.5 rounded-full border-2 border-meituan-dark text-xs font-black flex items-center gap-1 shadow-sm ${
+              raceState.isRunning ? 'scooter-running' : ''
+            }" style="background:${pal.bg}; color:${pal.text}">
+              <span>🛵</span>
+              <span>${escapeHtml(player.name)}</span>
+            </div>
+          </div>
+        `;
+
+        container.appendChild(lane);
+      });
+    }
+
+    function startScooterRace() {
+      if (raceState.isRunning) return;
+      const active = getActivePlayers();
+      if (active.length < 2) return;
+
+      raceState.isRunning = true;
+      raceState.stepCount = 0;
+      active.forEach(p => {
+        raceState.positions[p.id] = 0;
+      });
+
+      document.getElementById('startRaceBtn').disabled = true;
+      const rule = document.getElementById('raceRuleSelect').value; // 'first' | 'last'
+      const commentaryEl = document.getElementById('raceCommentary');
+      commentaryEl.textContent = 'GO! Riders are speeding down to the hotel lobby!';
+
+      renderRaceLanes();
+
+      raceState.intervalId = setInterval(() => {
+        raceState.stepCount++;
+        sfx.playEngineBlip(raceState.stepCount);
+
+        let finisher = null;
+
+        active.forEach(p => {
+          // Randomized speed burst per tick
+          const burst = 1.4 + Math.random() * 4.5;
+          raceState.positions[p.id] = Math.min(100, (raceState.positions[p.id] || 0) + burst);
+
+          const riderEl = document.getElementById(`scooter_${p.id}`);
+          if (riderEl) {
+            const clamped = Math.min(100, raceState.positions[p.id]);
+            riderEl.style.left = `calc(52px + ${clamped} * (100% - 118px) / 100)`;
+          }
+
+          if (raceState.positions[p.id] >= 100 && !finisher) {
+            finisher = p;
+          }
+        });
+
+        // Update live funny commentary every 8 ticks
+        if (raceState.stepCount % 8 === 0) {
+          const randomPlayer = active[Math.floor(Math.random() * active.length)];
+          const template = RACE_COMMENTARIES[Math.floor(Math.random() * RACE_COMMENTARIES.length)];
+          commentaryEl.textContent = template.replace('{name}', randomPlayer.name);
+        }
+
+        if (finisher) {
+          clearInterval(raceState.intervalId);
+          raceState.isRunning = false;
+          document.getElementById('startRaceBtn').disabled = false;
+
+          let chosenRunner = finisher;
+          let ruleLabel = 'Scooter Race (1st to Cabinet)';
+
+          if (rule === 'last') {
+            // Find player furthest behind
+            chosenRunner = active.reduce((slowest, curr) =>
+              raceState.positions[curr.id] < raceState.positions[slowest.id] ? curr : slowest
+            , active[0]);
+            ruleLabel = 'Scooter Race (Slowest Rider)';
+          }
+
+          commentaryEl.textContent = `🏁 ${chosenRunner.name} has been selected for Lobby Takeout Duty!`;
+          renderRaceLanes();
+
+          setTimeout(() => {
+            announceChosenRunner(chosenRunner, ruleLabel);
+          }, 380);
+        }
+      }, 65);
+    }
+
+    function resetScooterRace() {
+      if (raceState.intervalId) {
+        clearInterval(raceState.intervalId);
+      }
+      raceState.isRunning = false;
+      raceState.positions = {};
+      document.getElementById('startRaceBtn').disabled = false;
+      document.getElementById('raceCommentary').textContent =
+        'Riders lined up at the hotel elevator! Press START LOBBY SPRINT!';
+      renderRaceLanes();
+    }
+
+    /**************************************************************
+     * 8. WINNER MODAL & CONFETTI CELEBRATION
+     **************************************************************/
+    function announceChosenRunner(player, sourceModeLabel) {
+      appState.currentWinner = player;
+      appState.currentWinSource = sourceModeLabel;
+      appState.tallyConfirmedForWinner = false;
+
+      sfx.playDeliveryFanfare();
+      launchConfetti();
+
+      const pal = getPaletteForPlayer(player, 0);
+      const circleEl = document.getElementById('winnerAvatarCircle');
+      circleEl.style.backgroundColor = pal.bg;
+      circleEl.style.color = pal.text;
+
+      document.getElementById('winnerEmoji').textContent = player.emoji || pal.emoji;
+      document.getElementById('winnerShortCode').textContent = player.name.slice(0, 4);
+      document.getElementById('winnerShortCode').style.color = pal.text;
+
+      document.getElementById('modalModeBadge').textContent = sourceModeLabel;
+      document.getElementById('winnerHeadline').textContent = `${player.name} is going downstairs!`;
+
+      rollRandomHotelTip();
+
+      const confirmBtn = document.getElementById('confirmTallyModalBtn');
+      confirmBtn.disabled = false;
+      confirmBtn.innerHTML = `<i class="fa-solid fa-check-double"></i><span>Confirm & +1 Tally</span>`;
+
+      document.getElementById('liveStatusText').textContent =
+        `"Paging ${player.name}! Please head down to the hotel lobby to collect the Meituan order!"`;
+
+      const modal = document.getElementById('winnerModal');
+      modal.classList.remove('hidden');
+      modal.classList.add('flex');
+    }
+
+    function rollRandomHotelTip() {
+      const tip = HOTEL_TIPS[Math.floor(Math.random() * HOTEL_TIPS.length)];
+      document.getElementById('winnerHotelTip').textContent = `"${tip}"`;
+    }
+
+    function closeWinnerModal() {
+      const modal = document.getElementById('winnerModal');
+      modal.classList.add('hidden');
+      modal.classList.remove('flex');
+    }
+
+    // Confetti Particle System
+    const confettiCanvas = document.getElementById('confettiCanvas');
+    const confettiCtx = confettiCanvas.getContext('2d');
+    let confettiParticles = [];
+    let confettiAnimId = null;
+
+    function launchConfetti() {
+      confettiCanvas.width = window.innerWidth;
+      confettiCanvas.height = window.innerHeight;
+
+      const colors = ['#FFD000', '#FF6B00', '#191919', '#2EC4B6', '#FF3366', '#FFFFFF'];
+      confettiParticles = Array.from({ length: 95 }, () => ({
+        x: window.innerWidth / 2 + (Math.random() - 0.5) * 180,
+        y: window.innerHeight * 0.45,
+        vx: (Math.random() - 0.5) * 16,
+        vy: -Math.random() * 16 - 5,
+        size: 7 + Math.random() * 7,
+        color: colors[Math.floor(Math.random() * colors.length)],
+        rotation: Math.random() * 360,
+        vRot: (Math.random() - 0.5) * 12,
+        gravity: 0.36
+      }));
+
+      if (confettiAnimId) cancelAnimationFrame(confettiAnimId);
+      animateConfetti();
+    }
+
+    function animateConfetti() {
+      confettiCtx.clearRect(0, 0, confettiCanvas.width, confettiCanvas.height);
+
+      let activeCount = 0;
+      confettiParticles.forEach(p => {
+        p.x += p.vx;
+        p.y += p.vy;
+        p.vy += p.gravity;
+        p.rotation += p.vRot;
+
+        if (p.y < confettiCanvas.height + 30) {
+          activeCount++;
+          confettiCtx.save();
+          confettiCtx.translate(p.x, p.y);
+          confettiCtx.rotate((p.rotation * Math.PI) / 180);
+          confettiCtx.fillStyle = p.color;
+          confettiCtx.fillRect(-p.size / 2, -p.size / 2, p.size, p.size * 0.65);
+          confettiCtx.restore();
+        }
+      });
+
+      if (activeCount > 0) {
+        confettiAnimId = requestAnimationFrame(animateConfetti);
+      } else {
+        confettiCtx.clearRect(0, 0, confettiCanvas.width, confettiCanvas.height);
+      }
+    }
+
+    /**************************************************************
+     * 9. EVENT LISTENERS & INITIALIZATION
+     **************************************************************/
+    function updateSoundButtonUI() {
+      const icon = document.getElementById('soundIcon');
+      const label = document.getElementById('soundLabel');
+      if (appState.soundEnabled) {
+        icon.className = 'fa-solid fa-volume-high';
+        label.textContent = 'SFX ON';
+      } else {
+        icon.className = 'fa-solid fa-volume-xmark';
+        label.textContent = 'MUTED';
+      }
+    }
+
+    function switchMode(newMode) {
+      appState.currentMode = newMode;
+
+      // Update Tab Buttons
+      document.querySelectorAll('.mode-tab').forEach(btn => {
+        const isCurrent = btn.getAttribute('data-mode') === newMode;
+        btn.classList.toggle('bg-meituan-yellow', isCurrent);
+        btn.classList.toggle('bg-white', !isCurrent);
+      });
+
+      // Toggle Panels
+      document.getElementById('mode-wheel').classList.toggle('hidden', newMode !== 'wheel');
+      document.getElementById('mode-bags').classList.toggle('hidden', newMode !== 'bags');
+      document.getElementById('mode-race').classList.toggle('hidden', newMode !== 'race');
+
+      if (newMode === 'wheel') {
+        resizeWheelCanvas();
+      } else if (newMode === 'bags') {
+        initMysteryBagsGame();
+      } else if (newMode === 'race') {
+        renderRaceLanes();
+      }
+    }
+
+    window.onload = function () {
+      loadState();
+      renderAllUI();
+      resizeWheelCanvas();
+
+      window.addEventListener('resize', () => {
+        if (appState.currentMode === 'wheel') {
+          resizeWheelCanvas();
+        }
+      });
+
+      // Mode Tabs
+      document.querySelectorAll('.mode-tab').forEach(btn => {
+        btn.addEventListener('click', () => {
+          sfx.playTick(1.1);
+          switchMode(btn.getAttribute('data-mode'));
+        });
+      });
+
+      // Header Sound & Horn Buttons
+      document.getElementById('soundToggleBtn').addEventListener('click', () => {
+        appState.soundEnabled = !appState.soundEnabled;
+        updateSoundButtonUI();
+        saveState();
+        if (appState.soundEnabled) sfx.playTick(1.2);
+      });
+
+      document.getElementById('testHornBtn').addEventListener('click', () => {
+        sfx.playDeliveryFanfare();
+      });
+
+      // Wheel Controls
+      document.getElementById('spinWheelBtn').addEventListener('click', triggerSpinWheel);
+      document.getElementById('centerSpinBtn').addEventListener('click', triggerSpinWheel);
+      wheelCanvas.addEventListener('click', triggerSpinWheel);
+
+      document.getElementById('shuffleWheelBtn').addEventListener('click', () => {
+        if (wheelState.isSpinning) return;
+        appState.players.sort(() => Math.random() - 0.5);
+        sfx.playTick(1.3);
+        saveState();
+        renderAllUI();
+      });
+
+      // Mystery Bags Controls
+      document.getElementById('bagCountSelect').addEventListener('change', initMysteryBagsGame);
+      document.getElementById('resetBagsBtn').addEventListener('click', () => {
+        sfx.playTick(1.2);
+        initMysteryBagsGame();
+      });
+
+      // Scooter Race Controls
+      document.getElementById('startRaceBtn').addEventListener('click', startScooterRace);
+      document.getElementById('resetRaceBtn').addEventListener('click', resetScooterRace);
+
+      // Add New Player Form
+      document.getElementById('addPlayerForm').addEventListener('submit', e => {
+        e.preventDefault();
+        const input = document.getElementById('newPlayerInput');
+        const name = input.value.trim();
+        if (!name) return;
+
+        const nextIdx = appState.players.length;
+        const pal = SLICE_PALETTE[nextIdx % SLICE_PALETTE.length];
+
+        appState.players.push({
+          id: 'p_' + Date.now() + '_' + Math.floor(Math.random() * 1000),
+          name: name,
+          active: true,
+          tally: 0,
+          colorIdx: nextIdx % SLICE_PALETTE.length,
+          emoji: pal.emoji
+        });
+
+        input.value = '';
+        sfx.playSafePop();
+        saveState();
+        renderAllUI();
+      });
+
+      // Roster Actions Delegation (Toggle / Remove)
+      document.getElementById('rosterList').addEventListener('click', e => {
+        const btn = e.target.closest('button[data-action]');
+        if (!btn) return;
+        const action = btn.getAttribute('data-action');
+        const id = btn.getAttribute('data-id');
+
+        if (action === 'toggle') {
+          const p = appState.players.find(item => item.id === id);
+          if (p) {
+            p.active = !p.active;
+            sfx.playTick(1.0);
+            saveState();
+            renderAllUI();
+          }
+        } else if (action === 'remove') {
+          appState.players = appState.players.filter(item => item.id !== id);
+          sfx.playTick(0.8);
+          saveState();
+          renderAllUI();
+        }
+      });
+
+      // Reset Default Roster (JK, JH, XW, XQ)
+      document.getElementById('resetDefaultRosterBtn').addEventListener('click', () => {
+        if (wheelState.isSpinning || raceState.isRunning) return;
+        appState.players = JSON.parse(JSON.stringify(DEFAULT_PARTICIPANTS));
+        sfx.playSafePop();
+        saveState();
+        renderAllUI();
+      });
+
+      // Enable All Roommates
+      document.getElementById('enableAllPlayersBtn').addEventListener('click', () => {
+        appState.players.forEach(p => (p.active = true));
+        sfx.playTick(1.1);
+        saveState();
+        renderAllUI();
+      });
+
+      // Tally Board +/- Delegation
+      document.getElementById('tallyBoard').addEventListener('click', e => {
+        const btn = e.target.closest('button[data-tally]');
+        if (!btn) return;
+        const dir = btn.getAttribute('data-tally');
+        const id = btn.getAttribute('data-id');
+        const player = appState.players.find(p => p.id === id);
+        if (!player) return;
+
+        if (dir === 'inc') player.tally++;
+        if (dir === 'dec') player.tally = Math.max(0, player.tally - 1);
+        sfx.playTick(1.1);
+        saveState();
+        renderRosterList();
+        renderTallyBoard();
+      });
+
+      // Clear All Tallies
+      document.getElementById('clearTalliesBtn').addEventListener('click', () => {
+        appState.players.forEach(p => (p.tally = 0));
+        appState.history = [];
+        sfx.playTick(0.9);
+        saveState();
+        renderRosterList();
+        renderTallyBoard();
+        renderHistoryLog();
+      });
+
+      // Winner Modal Actions
+      document.getElementById('closeModalXBtn').addEventListener('click', closeWinnerModal);
+      document.getElementById('newTipBtn').addEventListener('click', () => {
+        sfx.playTick(1.2);
+        rollRandomHotelTip();
+      });
+
+      document.getElementById('spinAgainModalBtn').addEventListener('click', () => {
+        closeWinnerModal();
+        if (appState.currentMode === 'wheel') {
+          triggerSpinWheel();
+        } else if (appState.currentMode === 'bags') {
+          initMysteryBagsGame();
+        } else if (appState.currentMode === 'race') {
+          resetScooterRace();
+          startScooterRace();
+        }
+      });
+
+      document.getElementById('confirmTallyModalBtn').addEventListener('click', () => {
+        if (!appState.currentWinner || appState.tallyConfirmedForWinner) {
+          closeWinnerModal();
+          return;
+        }
+        appState.tallyConfirmedForWinner = true;
+        appState.currentWinner.tally = (appState.currentWinner.tally || 0) + 1;
+
+        const nowStr = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+        appState.history.unshift({
+          name: appState.currentWinner.name,
+          mode: appState.currentWinSource,
+          time: nowStr
+        });
+
+        sfx.playSafePop();
+        saveState();
+        renderRosterList();
+        renderTallyBoard();
+        renderHistoryLog();
+        closeWinnerModal();
+      });
+    };
+  </script>
+</body>
+</html>
